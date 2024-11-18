@@ -26,6 +26,9 @@ jobs:
         # 装pkg
         - name: InstallENV
           run:  npm install -g rimraf pkg
+        # 清除缓存
+        - name: ClearTemp
+          run:  rimraf dist  
         # 打包
         - name: Build
-          run: npm build
+          run: pkg ./ --debug=true
