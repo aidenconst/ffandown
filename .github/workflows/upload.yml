@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '14.18.3'
+          node-version: '23.2.0'
 
       # Runs a set of commands using the runners shell
       - name: Install Dependencies
@@ -62,9 +62,9 @@ jobs:
         id: docker_tags
         run: |
               if [[ "${{ env.TAG }}" == *Beta* ]]; then
-                echo "::set-output name=tags::h55205l/ffandown:${{ env.TAG }}"
+                echo "::set-output name=tags::aidenconst/ffandown:${{ env.TAG }}"
               else
-                echo "::set-output name=tags::h55205l/ffandown:latest,h55205l/ffandown:${{ env.TAG }}"
+                echo "::set-output name=tags::aidenconst/ffandown:latest,aidenconst/ffandown:${{ env.TAG }}"
               fi
 
       - name: Build And Push Docker image
@@ -80,9 +80,9 @@ jobs:
         id: docker_arm_tags
         run: |
               if [[ "${{ env.TAG }}" == *Beta* ]]; then
-                echo "::set-output name=tags::h55205l/ffandown:arm64-${{ env.TAG }}"
+                echo "::set-output name=tags::aidenconst/ffandown:arm64-${{ env.TAG }}"
               else
-                echo "::set-output name=tags::h55205l/ffandown:arm64,h55205l/ffandown:arm64-${{ env.TAG }}"
+                echo "::set-output name=tags::aidenconst/ffandown:arm64,aidenconst/ffandown:arm64-${{ env.TAG }}"
               fi
 
       - name: Build And Push Arm64 Docker image
