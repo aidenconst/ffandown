@@ -2,13 +2,49 @@
 const express = require('express')
 const ws = require('express-ws')
 const cluster = require('cluster')
+const crypto = require("crypto")
 const path = require('path')
 const colors = require('colors')
 const bodyParser = require('body-parser')
+const jwt = require("jsonwebtoken"); // 用于签发、解析`token`
 const app = express()
 const Utils = require('./utils/index')
+const secretKey = "aidenSEAFORESTyibin";
 const jsonParser = bodyParser.json()
-
+/* 获取一个期限为12小时的token */
+function getToken(payload = {}) {
+    return jwt.sign(payload, secretKey, {
+      expiresIn: "72h",
+    });
+}
+/**路由守卫**/
+function authenticateToken(req, res, next) {
+    const token = req.headers["authorization"];
+    if (token == null)
+      return res.sendStatus(401); // 如果没有token，返回未授权的状态码
+    try {
+      jwt.verify(token, secretKey, (err, decoded) => {
+        if (err) return res.sendStatus(401);
+        res.decoded = decoded;
+        next(); // 调用下一个中间件或路由处理器
+      });
+    } catch (error) {
+      delete req.headers.authorization;
+      res.status(401).send({
+        code: -1,
+        data: null,
+        error: "请刷新登录后重试！",
+        message: "请刷新登录后重试！",
+      });
+    }
+  }
+//生成md5,取前16位
+const md5 = (str) => {
+    return crypto
+      .createHash("md5")
+      .update(str)
+      .digest("hex");
+  };
 // express static server
 app.use(express.static(path.join(process.cwd(), 'public')))
 /**
@@ -37,6 +73,27 @@ function createServer (port) {
             Utils.LOG.info('close connection')
         })
     })
+    app.post('/login', async (req, res) => {
+        const { username, password } = req.query;
+        try {
+            await this.dbOperation.login(username,md5(password)).then(data=>{
+                if(data){
+                    const token = getToken({ username });
+                    res.header("Authoization", token);
+                    res.cookie("jwt", token, {
+                        maxAge: 3 * 24 * 60 * 60 * 1000, // Cookie有效时长（毫秒）
+                        httpOnly: false, // 仅通过HTTP协议访问（前端不可访问）
+                        secure: false, // 仅在HTTPS协议下传输
+                        sameSite: "lax", // 防止CSRF攻击
+                    });
+                }
+                res.send({ code: data ? 0 : 1, message: data ? '登录成功' : '账号或密码错误'})
+            })
+        } catch (e) {
+            Utils.LOG.error(e)
+            res.send({ code: 1, message: String(e) })
+        }
+    })
     app.get('/config', async (req, res) => {
         res.send({ code: 0, data: this.config })
     })
@@ -48,7 +105,7 @@ function createServer (port) {
         this.config = data
         res.send({ code: 0, message: 'update success' })
     })
-    // get version info
+    // 获取版本信息
     app.get('/version', async (req, res) => {
         try {
             const version = await Utils.getFrontEndVersion()
@@ -57,7 +114,7 @@ function createServer (port) {
             res.send({ code: 1, message: e.message })
         }
     })
-    // upgrade front end
+    // 升级前端
     app.get('/upgrade', async (req, res) => {
         try {
             await Utils.autoUpdateFrontEnd()

@@ -1,9 +1,11 @@
 const { DatabaseSync } = require('node:sqlite');
+const { v4: uuidv4 } = require('uuid')
 const dbOperation = {
     async sync () {
         try {
             this.db = await new DatabaseSync('./database/sqlite.db')
-            this.TABLE = "down"
+            this.TABLE = "down";
+            this.userTable = "user";
             if(!this.db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='${this.TABLE}'`).get()){
                 console.debug(`检测到 ${this.TABLE} 表不存在，自动创建...`)
                 this.db.exec(`CREATE TABLE ${this.TABLE} (
@@ -21,10 +23,41 @@ const dbOperation = {
                 crt_tm    TEXT NOT NULL,
                 upd_tm    TEXT NOT NULL)`)
             }
+            if(!this.db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='${this.userTable}'`).get()){
+                console.debug(`检测到 ${this.userTable} 表不存在，自动创建...`)
+                this.db.exec(`CREATE TABLE ${this.userTable} (
+                uid         TEXT PRIMARY KEY UNIQUE NOT NULL,
+                username    TEXT NOT NULL,
+                password    TEXT NOT NULL,
+                logintime   TEXT)`)
+                const insert  = this.db.prepare(`INSERT INTO ${this.userTable} (uid, username, password, logintime)VALUES (?,?,?,?)`);
+                const defaultUser = {
+                    uid:uuidv4(),
+                    username:'admin',
+                    password:'e10adc3949ba59abbe56e057f20f883e',
+                    logintime:new Date().getTime().toString()
+                }
+                insert.run(defaultUser.uid,defaultUser.username,defaultUser.password,defaultUser.logintime);
+                console.log(`管理员初始化信息[userName:admin | passWord:123456]`);
+            }
             //status：0/初始状态；1/下载状态；2/停止状态；3/完成状态；4/发生错误，5/等待下载
             console.log(`初始化数据表完成！`)
         } catch (e) {
             console.log('[ffandown] 数据库同步失败:' + String(e).trim())
+        }
+    },
+    /**
+     * 登录验证
+     * @param {*}   username   登录账号
+     * @param {*}   password   登录密码
+     */
+    async login (username , password){
+        try {
+            const selectLogin  = this.db.prepare(`SELECT * FROM ${this.userTable} WHERE username = ? AND password = ?`);
+            const loginRec = selectLogin.get(username,password)
+            return Promise.resolve(loginRec?true:false)
+        } catch (e) {
+            return Promise.reject(e)
         }
     },
     /**

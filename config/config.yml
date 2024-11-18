@@ -4,7 +4,7 @@ webhooks: ''
 webhookType: bark
 thread: true
 useFFmpegLib: true
-maxDownloadNum: 5
+maxDownloadNum: '8'
 preset: ultrafast
 outputformat: mp4
 enableTimeSuffix: false
