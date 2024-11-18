@@ -23,7 +23,9 @@ jobs:
         # 装依赖
         - name: Install
           run: npm install
-          
+        # 装pkg
+        - name: InstallENV
+          run:  npm install -g rimraf pkg
         # 打包
         - name: Build
           run: npm build
