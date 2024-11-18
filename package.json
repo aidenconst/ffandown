@@ -8,7 +8,7 @@
     "start": "node --experimental-sqlite bootstrap.js --debug=true",
     "dev": "nodemon",
     "clean": "rimraf dist",
-    "pkg": "pkg ./ --debug=true --experimental-sqlite",
+    "pkg": "pkg ./ --debug=true",
     "build": "npm run clean && npm run pkg",
     "rmi": "docker rmi h55205l/ffandown:latest",
     "build:image": "docker build . -t h55205l/ffandown:latest",
